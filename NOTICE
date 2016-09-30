@@ -1,0 +1,10 @@
+UI Localizer - a simple annotation processor that makes marked strings to be initialized by values from a localization file.
+
+Copyright (C) 2015,2016 Devexperts LLC
+
+This product is developed at Devexperts LLC (http://devexperts.com/).
+Licensed under the Mozilla Public License, Version 2.
+Full text of the licence can be found in the LICENSE file.
+Source code and documentation are available at <https://github.com/devexperts/>.
+
+

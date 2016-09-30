@@ -33,17 +33,13 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @SupportedAnnotationTypes({"com.devexperts.uilocalizer.Localizable"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class LocalizableProcessor extends AbstractProcessor {
-    public static final String ANNOTATION_TYPE = "com.devexperts.uilocalizer.Localizable";
-    public static final String KEY_REGEX = "[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+";
+    private static final String ANNOTATION_TYPE = "com.devexperts.uilocalizer.Localizable";
+    private static final String KEY_REGEX = "[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+";
     private JavacProcessingEnvironment javacProcessingEnv;
     private TreeMaker maker;
 
@@ -72,10 +68,12 @@ public class LocalizableProcessor extends AbstractProcessor {
         Set<JCTree.JCCompilationUnit> compilationUnits = Collections.newSetFromMap(new IdentityHashMap<>());
         Map<String, String> keysToDefaultValues = new HashMap<>();
         AstNodeFactory nodeFactory = new AstNodeFactory(maker, utils);
+        Collection<JCTree.JCVariableDecl> localizableVariableDeclarations = new ArrayList<>();
         try {
             for (final Element e : localizableConstants) {
                 Pair<JCTree, JCTree.JCCompilationUnit> pair = utils.getTreeAndTopLevel(e, null, null);
                 JCTree.JCVariableDecl currentField = (JCTree.JCVariableDecl) pair.fst;
+                localizableVariableDeclarations.add(currentField);
                 JCTree.JCAnnotation currentAnnotation = currentField.getModifiers().getAnnotations()
                     .stream().filter(a -> ANNOTATION_TYPE.equals(a.type.toString())).findFirst().get();
 
@@ -86,14 +84,9 @@ public class LocalizableProcessor extends AbstractProcessor {
                 injectLocalizationCall(currentField,
                     nodeFactory.getStringMethodInvocation(currentKey, currentDefaultValue));
             }
-            for (JCTree.JCCompilationUnit compilationUnit : compilationUnits) {
-                for (JCTree tree : compilationUnit.getTypeDecls()) {
-                    JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) tree;
-                    nodeFactory.setPositionFor(classDecl);
-                    classDecl.defs = classDecl.defs.prepend(nodeFactory.getLocaleConstantDecl());
-                    classDecl.defs = classDecl.defs.append(nodeFactory.getStringMethodDeclaration());
-                }
-            }
+            AddLocalizationNodesVisitor visitor = new AddLocalizationNodesVisitor(
+                    nodeFactory, localizableVariableDeclarations);
+            compilationUnits.forEach(unit -> unit.accept(visitor));
             OutputUtil.generatePropertyFiles(keysToDefaultValues);
             OutputUtil.printCompilationUnits(compilationUnits, "localized_classes.txt");
         } catch (InvalidUsageException | FileNotFoundException e) {
