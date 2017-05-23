@@ -4,7 +4,7 @@
 
     <groupId>com.devexperts</groupId>
     <artifactId>uilocalizer</artifactId>
-    <version>1.4</version>
+    <version>1.5-SNAPSHOT</version>
     <name>UI Localizer</name>
 
     <licenses>
@@ -214,7 +214,7 @@
     <scm>
         <connection>scm:git:https://github.com/Devexperts/uilocalizer.git</connection>
         <developerConnection>scm:git:git@github.com:Devexperts/uilocalizer.git</developerConnection>
-        <tag>uilocalizer-1.4</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
