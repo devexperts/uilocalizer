@@ -2,7 +2,7 @@
  * #%L
  * UI Localizer
  * %%
- * Copyright (C) 2015 - 2016 Devexperts, LLC
+ * Copyright (C) 2015 - 2017 Devexperts, LLC
  * %%
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -11,9 +11,6 @@
  */
 import com.devexperts.uilocalizer.Localizable;
 
-/**
- * @author Ivan Rakov
- */
 public enum KindOfType {
     @Localizable("scope.key.ca") CANADIAN(7, "Canadian", "CA"),
     @Localizable("scope.key.no") USUAL("Usual");

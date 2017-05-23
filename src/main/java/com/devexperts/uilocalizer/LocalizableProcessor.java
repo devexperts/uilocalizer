@@ -4,7 +4,7 @@ package com.devexperts.uilocalizer;
  * #%L
  * UI Localizer
  * %%
- * Copyright (C) 2015 - 2016 Devexperts, LLC
+ * Copyright (C) 2015 - 2017 Devexperts, LLC
  * %%
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -66,7 +66,7 @@ public class LocalizableProcessor extends AbstractProcessor {
         JavacElements utils = javacProcessingEnv.getElementUtils();
         Set<? extends Element> localizableConstants = roundEnv.getElementsAnnotatedWith(annotation);
         Set<JCTree.JCCompilationUnit> compilationUnits = Collections.newSetFromMap(new IdentityHashMap<>());
-        Map<String, String> keysToDefaultValues = new HashMap<>();
+        Map<String, String> keysToDefaultValues = new LinkedHashMap<>();
         AstNodeFactory nodeFactory = new AstNodeFactory(maker, utils);
         Collection<JCTree.JCVariableDecl> localizableVariableDeclarations = new ArrayList<>();
         try {
