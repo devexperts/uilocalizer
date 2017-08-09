@@ -4,7 +4,7 @@
 
     <groupId>com.devexperts</groupId>
     <artifactId>uilocalizer</artifactId>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.5</version>
     <name>UI Localizer</name>
 
     <licenses>
@@ -19,11 +19,6 @@
         <name>Devexperts, LLC</name>
         <url>http://www.devexperts.com/</url>
     </organization>
-
-    <url>https://github.com/Devexperts/egen</url>
-    <issueManagement>
-        <url>https://github.com/Devexperts/egen/issues</url>
-    </issueManagement>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -204,6 +199,20 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                    <!-- Configuration for release -->
+                    <plugin>
+                        <groupId>com.devexperts.jgitflow</groupId>
+                        <artifactId>jgitflow-maven-plugin</artifactId>
+                        <version>1.0-m5.1-devexperts</version>
+                        <configuration>
+                            <autoVersionSubmodules>true</autoVersionSubmodules>
+                            <flowInitContext>
+                                <versionTagPrefix>uilocalizer-</versionTagPrefix>
+                            </flowInitContext>
+                            <squash>true</squash>
+                            <scmCommentPrefix>[release] </scmCommentPrefix>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

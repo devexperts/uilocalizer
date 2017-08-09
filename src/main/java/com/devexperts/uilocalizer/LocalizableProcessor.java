@@ -34,20 +34,36 @@ import javax.tools.Diagnostic;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SupportedAnnotationTypes({"com.devexperts.uilocalizer.Localizable"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class LocalizableProcessor extends AbstractProcessor {
     private static final String ANNOTATION_TYPE = "com.devexperts.uilocalizer.Localizable";
+    public static final String LANGUAGE_CONTROLLER_PATH = "com.devexperts.uilocalizer.languageControllerPath";
     private static final String KEY_REGEX = "[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+";
+    private static final String OPTION_APPEND = "com.devexperts.uilocalizer.appendToPropertyFile";
+
     private JavacProcessingEnvironment javacProcessingEnv;
     private TreeMaker maker;
+    private boolean propertyFileAppend;
+    private String languageControllerPath;
 
     @Override
     public void init(ProcessingEnvironment procEnv) {
         super.init(procEnv);
         this.javacProcessingEnv = (JavacProcessingEnvironment) procEnv;
         this.maker = TreeMaker.instance(javacProcessingEnv.getContext());
+        this.languageControllerPath = procEnv.getOptions().get(LANGUAGE_CONTROLLER_PATH);
+        this.propertyFileAppend = Boolean.parseBoolean(procEnv.getOptions().get(OPTION_APPEND));
+    }
+
+    @Override
+    public Set<String> getSupportedOptions() {
+        Set<String> supportedOptions = new HashSet<>();
+        supportedOptions.add(LANGUAGE_CONTROLLER_PATH);
+        supportedOptions.add(OPTION_APPEND);
+        return Collections.unmodifiableSet(supportedOptions);
     }
 
     @Override
@@ -63,11 +79,19 @@ public class LocalizableProcessor extends AbstractProcessor {
 
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "UiLocalizer annotation processor triggered. " +
             "Output can be found at " + Paths.get(".").toAbsolutePath().normalize().toString());
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "UiLocalizer: Existing property files will be " +
+            (propertyFileAppend ? "appended" : "rewritten"));
+        if (this.languageControllerPath != null) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
+                "UiLocalizer: languageControllerPath is set to " + this.languageControllerPath);
+        } else {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "UiLocalizer: languageControllerPath not set");
+        }
         JavacElements utils = javacProcessingEnv.getElementUtils();
         Set<? extends Element> localizableConstants = roundEnv.getElementsAnnotatedWith(annotation);
         Set<JCTree.JCCompilationUnit> compilationUnits = Collections.newSetFromMap(new IdentityHashMap<>());
         Map<String, String> keysToDefaultValues = new LinkedHashMap<>();
-        AstNodeFactory nodeFactory = new AstNodeFactory(maker, utils);
+        AstNodeFactory nodeFactory = new AstNodeFactory(maker, utils, languageControllerPath);
         Collection<JCTree.JCVariableDecl> localizableVariableDeclarations = new ArrayList<>();
         try {
             for (final Element e : localizableConstants) {
@@ -85,9 +109,12 @@ public class LocalizableProcessor extends AbstractProcessor {
                     nodeFactory.getStringMethodInvocation(currentKey, currentDefaultValue));
             }
             AddLocalizationNodesVisitor visitor = new AddLocalizationNodesVisitor(
-                    nodeFactory, localizableVariableDeclarations);
+                    nodeFactory, localizableVariableDeclarations, languageControllerPath);
             compilationUnits.forEach(unit -> unit.accept(visitor));
-            OutputUtil.generatePropertyFiles(keysToDefaultValues);
+            OutputUtil.generatePropertyFiles(keysToDefaultValues.entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry<String, String>::getKey)
+                    .thenComparing(Map.Entry::getValue))
+                .collect(Collectors.toList()), propertyFileAppend);
             OutputUtil.printCompilationUnits(compilationUnits, "localized_classes.txt");
         } catch (InvalidUsageException | FileNotFoundException e) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "UiLocalizer: " + e.getMessage());
@@ -173,4 +200,3 @@ public class LocalizableProcessor extends AbstractProcessor {
         return args.toArray(argsArray);
     }
 }
-

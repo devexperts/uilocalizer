@@ -17,38 +17,55 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
 public class OutputUtilTest {
 
-    private static Map<String, String> createTestMap() {
-        Map<String, String> testMap = new HashMap<>();
-        testMap.put("testcom.specChar", "#!= \n!");
-        testMap.put("testcom.usualString", "Test string.");
-        testMap.put("testcom.endLine", "\n");
-        testMap.put("testcom.exclamPt", "!");
-        testMap.put("testcom.equals", "=");
-        testMap.put("testcom.sharpString", "#");
-        return Collections.unmodifiableMap(testMap);
+    private static List<Map.Entry<String,String>> createTestList() {
+        List<Map.Entry<String,String>> testList = new ArrayList<>();
+        testList.add(new AbstractMap.SimpleEntry<>("testcom.specChar", "#!= \n!"));
+        testList.add(new AbstractMap.SimpleEntry<>("testcom.usualString", "Test string."));
+        testList.add(new AbstractMap.SimpleEntry<>("testcom.endLine", "\n"));
+        testList.add(new AbstractMap.SimpleEntry<>("testcom.exclamPt", "!"));
+        testList.add(new AbstractMap.SimpleEntry<>("testcom.equals", "="));
+        testList.add(new AbstractMap.SimpleEntry<>("testcom.sharpString", "#"));
+        testList.add(new AbstractMap.SimpleEntry<>("testcom.doubleBackSlash", "\\\\"));
+        testList.add(new AbstractMap.SimpleEntry<>("testcom.backSlash", "\\"));
+        return Collections.unmodifiableList(testList);
     }
 
     @Test
     public void generatePropertyFilesTest() throws Exception {
-        Map<String, String> testMap = createTestMap();
-        OutputUtil.generatePropertyFiles(testMap);
+        List<Map.Entry<String,String>> testList = createTestList();
+        OutputUtil.generatePropertyFiles(testList, false);
+        Properties properties = loadProperties();
+        testList.forEach(e -> checkPropertyExistence(properties, e.getKey(), e.getValue()));
+
+        List<Map.Entry<String,String>> appendList = new ArrayList<>();
+        appendList.add(new AbstractMap.SimpleEntry<>("testcom.appendProperty", "append"));
+        OutputUtil.generatePropertyFiles(appendList, true);
+        Properties appendProperties = loadProperties();
+
+        List<Map.Entry<String,String>> resultList = new ArrayList<>();
+        resultList.addAll(testList);
+        resultList.addAll(appendList);
+        resultList.forEach(e -> checkPropertyExistence(appendProperties, e.getKey(), e.getValue()));
+    }
+
+    private Properties loadProperties() throws IOException {
         InputStream propertiesInput = new FileInputStream("testcom.properties");
         Properties properties = new Properties();
         properties.load(propertiesInput);
-        testMap.forEach((key, value) -> {
-            assertEquals(properties.getProperty(key.substring(key.indexOf('.') + 1, key.length())), value);
-        });
         propertiesInput.close();
+        return properties;
+    }
+
+    private static void checkPropertyExistence(Properties properties, String key, String value) {
+        assertEquals(properties.getProperty(key.substring(key.indexOf('.') + 1, key.length())), value);
     }
 
     @AfterClass

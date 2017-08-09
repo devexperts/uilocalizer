@@ -14,6 +14,7 @@ package com.devexperts.uilocalizer;
 
 
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -28,10 +29,15 @@ public class AstNodeFactory {
     private static final int DOT_ASCII = '.';
     private TreeMaker maker;
     private JavacElements utils;
+    private final JCTree.JCVariableDecl localeField;
+    private String languageControllerPath;
 
-    public AstNodeFactory(TreeMaker maker, JavacElements utils) {
+    public AstNodeFactory(TreeMaker maker, JavacElements utils, String languageControllerPath) {
         this.maker = maker;
         this.utils = utils;
+        localeField = maker.VarDef(maker.Modifiers(Modifier.PRIVATE | Modifier.STATIC | Modifier.VOLATILE), utils.getName(LOCALE_FIELD_NAME),
+                ident("java.util.Locale"), null);
+        this.languageControllerPath = languageControllerPath;
     }
 
     public JCTree.JCMethodInvocation getStringMethodInvocation(String key, String defaultValue) {
@@ -49,23 +55,18 @@ public class AstNodeFactory {
             ident("java.lang.String"),
             List.<JCTree.JCTypeParameter>nil(),
             List.of(
-                maker.VarDef(maker.Modifiers(Flags.PARAMETER), utils.getName("key"), ident("java.lang.String"), null),
-                maker.VarDef(maker.Modifiers(Flags.PARAMETER), utils.getName("defaultString"),
+                maker.VarDef(
+                    maker.Modifiers(Flags.PARAMETER), utils.getName("key"),
+                    ident("java.lang.String"), null),
+                maker.VarDef(
+                    maker.Modifiers(Flags.PARAMETER), utils.getName("defaultString"),
                     ident("java.lang.String"), null)
-            ),
-            List.<JCTree.JCExpression>nil(),
-            getStringMethodBlock(),
-            null
+            ), List.<JCTree.JCExpression>nil(), getStringMethodBlock(), null
         );
     }
 
-    public JCTree.JCVariableDecl getLocaleConstantDecl() {
-        return maker.VarDef(
-            maker.Modifiers(Modifier.PRIVATE | Modifier.STATIC | Modifier.FINAL),
-            utils.getName(LOCALE_FIELD_NAME),
-            ident("java.util.Locale"),
-            getForLanguageTagMethodInvocation()
-        );
+    public JCTree.JCVariableDecl getLocaleFieldDecl() {
+        return localeField;
     }
 
     /**
@@ -99,7 +100,15 @@ public class AstNodeFactory {
 
     private JCTree.JCMethodInvocation getBundleInvocation() {
         return maker.Apply(List.<JCTree.JCExpression>nil(), ident("java.util.ResourceBundle.getBundle"),
-            List.of(getPrefixSubstringInvocation(), ident(LOCALE_FIELD_NAME)));
+            List.of(getPrefixSubstringInvocation(),
+                languageControllerPath == null ? ident(LOCALE_FIELD_NAME) :
+                    maker.Apply(
+                        List.nil(),
+                        ident(languageControllerPath + ".getLanguage"),
+                        List.nil()
+                    )
+            )
+        );
     }
 
     private JCTree.JCExpression getBundleStringInvocation() {
@@ -110,23 +119,13 @@ public class AstNodeFactory {
         );
     }
 
-    private JCTree.JCVariableDecl getBundleStringDeclaration() {
-        return maker.VarDef(
-            maker.Modifiers(0),
-            utils.getName("val"),
-            ident("java.lang.String"),
-            getBundleStringInvocation()
-        );
-    }
-
-    private JCTree.JCStatement getUtf8StringReturn() {
+    private JCTree.JCStatement getStringReturn() {
         return maker.Return(
             maker.NewClass(
                 null,
                 List.<JCTree.JCExpression>nil(),
                 ident("java.lang.String"),
-                List.of(maker.Apply(List.<JCTree.JCExpression>nil(), ident("val.getBytes"),
-                    List.of(maker.Literal("ISO-8859-1"))), maker.Literal("UTF-8")),
+                List.of(getBundleStringInvocation()),
                 null
             )
         );
@@ -142,7 +141,12 @@ public class AstNodeFactory {
 
     private JCTree.JCTry getTry() {
         return maker
-            .Try(maker.Block(0, List.of(getBundleStringDeclaration(), getUtf8StringReturn())), List.of(getCatcher()),
+            .Try(maker.Block(0,
+                languageControllerPath == null ?
+                    List.of(getLocaleFieldLazyInit(), getStringReturn()):
+                    List.of(getStringReturn())
+                ),
+                List.of(getCatcher()),
                 null);
     }
 
@@ -154,6 +158,11 @@ public class AstNodeFactory {
     private JCTree.JCMethodInvocation getForLanguageTagMethodInvocation() {
         return maker.Apply(List.<JCTree.JCExpression>nil(), ident("java.util.Locale.forLanguageTag"),
             List.of((JCTree.JCExpression) getPropertyMethodInvocation()));
+    }
+
+    private JCTree.JCIf getLocaleFieldLazyInit() {
+        return maker.If(maker.Binary(JCTree.Tag.EQ, maker.Ident(localeField.getName()), maker.Literal(TypeTag.BOT, null)),
+            maker.Exec(maker.Assign(maker.Ident(localeField.getName()), getForLanguageTagMethodInvocation())), null);
     }
 
     private JCTree.JCExpression ident(String complexIdent) {

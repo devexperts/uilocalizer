@@ -27,12 +27,15 @@ class AddLocalizationNodesVisitor extends JCTree.Visitor {
     private Collection<JCTree.JCVariableDecl> localizableVariableDeclarations;
     private JCTree.JCClassDecl currentClass;
     private Set<JCTree.JCClassDecl> localizedClasses;
+    private final String languageControllerPath;
 
     AddLocalizationNodesVisitor(AstNodeFactory localizationNodesFactory,
-                                Collection<JCTree.JCVariableDecl> localizableVariableDeclarations)
+                                Collection<JCTree.JCVariableDecl> localizableVariableDeclarations,
+                                String languageControllerPath)
     {
         this.localizationNodesFactory = localizationNodesFactory;
         this.localizableVariableDeclarations = localizableVariableDeclarations;
+        this.languageControllerPath = languageControllerPath;
         localizedClasses = new HashSet<>();
     }
 
@@ -55,7 +58,8 @@ class AddLocalizationNodesVisitor extends JCTree.Visitor {
             if (!localizedClasses.contains(currentClass)) {
                 localizedClasses.add(currentClass);
                 localizationNodesFactory.setPositionFor(currentClass);
-                currentClass.defs = currentClass.defs.prepend(localizationNodesFactory.getLocaleConstantDecl());
+                if (languageControllerPath == null)
+                    currentClass.defs = currentClass.defs.append(localizationNodesFactory.getLocaleFieldDecl());
                 currentClass.defs = currentClass.defs.append(localizationNodesFactory.getStringMethodDeclaration());
             }
         }

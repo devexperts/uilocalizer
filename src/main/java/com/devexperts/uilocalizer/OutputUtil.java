@@ -15,29 +15,29 @@ package com.devexperts.uilocalizer;
 
 import com.sun.tools.javac.tree.JCTree;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class OutputUtil {
     public static void printCompilationUnits(Collection<JCTree.JCCompilationUnit> compilationUnits,
-        String outputFileName) throws FileNotFoundException
-    {
+                                             String outputFileName) throws FileNotFoundException {
         PrintWriter writer = new PrintWriter(outputFileName);
         compilationUnits.forEach(writer::println);
         writer.close();
     }
 
-    public static void generatePropertyFiles(Map<String, String> keysToDefaultValues) throws FileNotFoundException {
+    public static void generatePropertyFiles(List<Map.Entry<String, String>> keysToDefaultValues, boolean append) throws FileNotFoundException {
         Map<String, PrintWriter> scopesToWriters = new HashMap<>();
-        for (Map.Entry<String, String> e : keysToDefaultValues.entrySet()) {
+        for (Map.Entry<String, String> e : keysToDefaultValues) {
             int dotIndex = e.getKey().indexOf('.');
             String scope = e.getKey().substring(0, dotIndex);
             String key = e.getKey().substring(dotIndex + 1);
             if (!scopesToWriters.containsKey(scope)) {
-                scopesToWriters.put(scope, new PrintWriter(scope + ".properties"));
+                scopesToWriters.put(scope, new PrintWriter(new FileOutputStream(new File(scope + ".properties"),
+                    append)));
             }
             scopesToWriters.get(scope).println(key + "=" + screenSpecialSymbols(e.getValue()));
         }
@@ -45,7 +45,7 @@ public class OutputUtil {
     }
 
     private static String screenSpecialSymbols(String value) {
-        value =  value.replaceAll("([\n=!:#])", "\\\\$1");
+        value =  value.replaceAll("([\\\\\n=!:#])", "\\\\$1");
         return  value.replaceAll("([\n])", "\\n");
     }
 }
