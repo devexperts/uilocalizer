@@ -1,0 +1,111 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'org.hibernate.build.gradle:gradle-maven-publish-auth:2.0.1'
+    }
+}
+
+plugins {
+    id "com.github.hierynomus.license" version "0.14.0"
+    id 'net.researchgate.release' version '2.6.0'
+    // id 'net.linguica.maven-settings' version '0.5'
+}
+
+
+allprojects {
+    ext.currentYear = Calendar.getInstance().get(Calendar.YEAR)
+    ext.copyright = "Copyright (C) $inceptionYear - $currentYear $organization"
+    ext.projectName = 'UI Localizer'
+
+
+    apply plugin: 'java'
+    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
+    apply plugin: 'maven-publish-auth'
+    group = 'com.devexperts.uilocalizer'
+
+    release {
+        failOnCommitNeeded = false
+        failOnPublishNeeded = false
+        failOnSnapshotDependencies = false
+        failOnUnversionedFiles = false
+        failOnUpdateNeeded = true
+        revertOnFail = true
+        preCommitText = ''
+        tagCommitMessage = '[Gradle Release Plugin] - creating tag: '
+        newVersionCommitMessage = '[Gradle Release Plugin] - new version commit: '
+        tagTemplate = '${version}'
+        versionPropertyFile = 'gradle.properties'
+        versionProperties = []
+        buildTasks = ['license', 'build', 'javadocJar', 'sourcesJar']
+        scmAdapters = [
+                net.researchgate.release.GitAdapter,
+        ]
+
+        git {
+            //requireBranch = 'gradleReleasePreparations'
+            //pushToRemote = 'origin'
+            pushToBranchPrefix = ''
+            commitVersionFileOnly = false
+            signTag = false
+        }
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    artifacts {
+        archives javadocJar, sourcesJar
+    }
+
+    beforeReleaseBuild.dependsOn publishToMavenLocal
+}
+
+subprojects {
+    apply plugin: 'license'
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+
+    license {
+        ext.name = projectName
+        ext.copyright = copyright
+        strictCheck true
+        header rootProject.file('src/license/mpl_2.0/header.txt')
+        mapping {
+            java = 'SLASHSTAR_STYLE'
+        }
+        excludes(["**/*.properties", "inspectionDescriptions/NonLocalizedString.html", "**/*.xml"])
+    }
+
+    jar {
+        manifest {
+            attributes 'Implementation-Title': projectName + ': ' + project.name,
+                    'Implementation-Version': version,
+                    'Copyright': copyright,
+                    'Built-by': System.getProperty('user.name'),
+                    'Build-JDK': System.getProperty('java.version'),
+                    'Source-Compatibity': sourceCompatibility,
+                    'Target-Compatibity': targetCompatibility
+        }
+    }
+
+
+
+    repositories {
+        maven { url "http://dl.bintray.com/devexperts/Maven" }
+        maven { url "http://repo.maven.apache.org/maven2" }
+    }
+}

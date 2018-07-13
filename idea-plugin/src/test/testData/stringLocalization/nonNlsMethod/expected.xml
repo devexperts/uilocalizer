@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problems>
+    <problem>
+        <file>Foo.java</file>
+        <line>24</line>
+        <description>Non localized string literal: 'bar'</description>
+    </problem>
+</problems>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problems>
+  <problem>
+    <file>Foo.java</file>
+    <line>16</line>
+    <problem_class>Hard coded strings</problem_class>
+    <description>Non localized string literal: 'xxxxx'</description>
+  </problem>
+  <problem>
+    <file>Foo.java</file>
+    <line>21</line>
+    <module>testNonNlsComment</module>
+    <package>&lt;default&gt;</package>
+    <entry_point TYPE="method" FQNAME="Foo void foo(String... s)" />
+    <problem_class severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Non Localized String literals</problem_class>
+    <description>Non localized string literal: &quot;MYNON-NLS&quot;</description>
+  </problem>
+</problems>
+

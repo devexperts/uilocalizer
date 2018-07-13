@@ -1,0 +1,36 @@
+plugins {
+    id "org.jetbrains.intellij" version "0.3.4"
+}
+
+apply plugin: 'org.jetbrains.intellij'
+
+intellij {
+    version '2017.2.2' //IntelliJ IDEA 2017.2.2 dependency; for a full list of IntelliJ IDEA releases please see https://www.jetbrains.com/intellij-repository/releases
+    plugins 'java-i18n', 'properties' //Bundled plugin dependencies
+    pluginName 'String Localization plugin'
+    updateSinceUntilBuild false
+    downloadSources false
+}
+
+configurations {
+    pluginBuild
+    compile.extendsFrom(pluginBuild)
+}
+
+dependencies {
+    pluginBuild project(':common')
+}
+
+jar {
+    from configurations.pluginBuild.asFileTree.files.collect { zipTree(it)} //Required to collect @Localizable interface from the "uilocalizer-common" module
+}
+
+task licenseCheckIdeaTests(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
+    source = fileTree(dir: "src/test/testData/stringLocalization/").include("**/*.*")
+}
+licenseTest.dependsOn licenseCheckIdeaTests
+
+task licenseFormatIdeaTests(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
+    source = fileTree(dir: "src/test/testData/stringLocalization/").include("**/*.*")
+}
+licenseFormat.dependsOn licenseFormatIdeaTests

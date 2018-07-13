@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problems>
+  <problem>
+    <file>Test.java</file>
+    <line>14</line>
+    <description>Non localized string literal</description>
+  </problem>
+  <problem>
+    <file>Test.java</file>
+    <line>18</line>
+    <description>Non localized string literal</description>
+  </problem>
+  <problem>
+    <file>Test.java</file>
+    <line>23</line>
+    <description>Non localized string literal</description>
+  </problem>
+  <problem>
+    <file>Test.java</file>
+    <line>24</line>
+    <description>Non localized string literal</description>
+  </problem>
+</problems>
+

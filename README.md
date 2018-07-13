@@ -7,10 +7,15 @@ Download
 
 What is it?
 -----------
-UI Localizer — tool for simplifying localization of Java applications. It's just an annotation processor that captures classes annotated with `@Localizable` in the compile-time. It performs two actions:
+UI Localizer — tool for simplifying localization of Java applications. It's just an annotation processor that captures fields annotated with `@Localizable` or `@LocalizationProperty` in the compile-time. 
 
-1. Through bytecode manipulations, replaces initialization of `@Localizable` strings by reading value from .propreties file (using `ResourceBundle`)
-2. Generates .properties template file with default values from source code
+When you use `@Localizable` annotation it performs two actions:
+
+
+1. Through bytecode manipulations, replaces initialization of `@Localizable` strings by reading value from `.propreties` file (using `ResourceBundle`)
+2. Generates `.properties` template file with default values from source code
+
+In case of @LocalizationProperty annotation, the tool just collects values to .properties file from source code.
 
 How to use tool in Java Project
 -------------------------------
@@ -22,19 +27,30 @@ You should just add uilocalizer.jar to compiler classpath and mark all localizab
 ```
 
 The only one annotation parameter should contain a name of property file (before the first dot) and property key (after the first dot).
-Compilation of the example above will generate the following .properties template file:
+Compilation of the example above will generate the following `.properties` template file:
 
 ```ini
 dialog.title=Order Details
 dialog.confirm=Confirm and Exit
 ```
 
+If there are some strings requiring more complex localization logic (for instance, you want to change them after loading 
+of the class) you may use annotation `@LocalizationProperty`:
+
+```java
+@LocalizationProperty
+public final static SomeClass complexVar = new SomeClass("order.dialog.someText", "Some text");
+@LocalizationProperty
+public final static SomeClass anotherComplexVar = SomeStaticClass.getSpecificValue("order.dialog.someText", "Some text");
+```
+This way you could automatically store such strings in same `.properties` files.
+
 To add support for any language in your application, you should:
 
 1. Take the generated template file
 2. Translate all properties values into the desired language
-3. Rename file as originalname_LANGUAGETAG.properties
-4. Add resulting .properties file to the application runtime classpath
+3. Rename file as `originalname_LANGUAGETAG.properties`
+4. Add resulting `.properties` file to the application runtime classpath
 
 Example of resulting French translation file:
 
@@ -51,7 +67,7 @@ You can choose the current language in your application using java property `ui.
 
 UI Localizer tool is fail-safe. That means if anything of mentioned above is missing (java property, key in a file for concrete language or a file for the language itself), default string value from initial source code will be used.
 
-If you use UI Localizer for compilation multiple modules and you use the same property file name you should use the option `com.devexperts.uilocalizer.appendToPropertyFile` set to `true`, properties will be appended to the end of the file, e.g.: `-Acom.devexperts.uilocalizer.propertyFileAppend=true`. The default value is `false`.
+If you use UI Localizer for compilation multiple modules and you use the same property file name you should use the option `com.devexperts.uilocalizer.appendToPropertyFile` set to `true`, properties will be appended to the end of the file, e.g.: `-Acom.devexperts.uilocalizer.appendToPropertyFile=true`. The default value is `false`.
 Use this option with caution, don't forget to clean up all template files before compilation with UI Localizer.
 
 Language consistency
@@ -100,6 +116,29 @@ Also using such a controller you can change language "on the fly" by setting lan
 2. Pass an argument to an annotation processor with option name `com.devexperts.uilocalizer.languageControllerPath`, value - fully qualified name:  
    
   `-Acom.devexperts.uilocalizer.languageControllerPath=com.example.SingletonLanguageController`
+  
+Custom localization facility
+----------------------------
+
+In case you want to use your own implementation of localization mechanism, you should provide an interface to it 
+as a `public` `static` method and tell UI Localizer to use it with `com.devexperts.uilocalizer.localizationMethod` option.
+
+Your localization method shall get a localized property key and a default value as parameters: 
+
+    ```java
+    package my.app;
+    public class MyLocalizationClass {
+        public static String myLocalizationMethod(String key, String defaultStr) {
+             // some code
+        }
+    }
+    ```
+    
+Option for localizer to use method above would be 
+
+`-Acom.devexperts.uilocalizer.localizationMethod=my.app.MyLocalizationClass.myLocalizationMethod`
+
+ 
 
 Bytecode changes
 ----------------
@@ -124,13 +163,12 @@ public class TestClass {
     private static final String KUKU = getString_u("scope.key", "cucumber");
     private static volatile java.util.Locale LOCALE_u;
     
-    private static java.lang.String getString_u(String key, String defaultString) {
+    private static String getString_u(String key, String defaultString) {
         try {
             if (LOCALE_u == null) 
                 LOCALE_u = java.util.Locale.forLanguageTag(System.getProperty("ui.dialogs.locale", "en-US"));
-            return new String(
-                java.util.ResourceBundle.getBundle(key.substring(0, key.indexOf(46)), LOCALE_u)
-                    .getString(key.substring(key.indexOf(46) + 1)));
+            return java.util.ResourceBundle.getBundle(key.substring(0, key.indexOf(46)), LOCALE_u)
+                .getString(key.substring(key.indexOf(46) + 1));
         } catch (Exception e) {
             return defaultString;
         }
@@ -148,13 +186,22 @@ public class TestClass {
     
     private static String getString_u(String key, String defaultString) {
         try {
-            return new String(
-                java.util.ResourceBundle.getBundle(key.substring(0, key.indexOf(46)), SingletonLanguageController.getLanguage())
-                    .getString(key.substring(key.indexOf(46) + 1)));
+            return java.util.ResourceBundle.getBundle(key.substring(0, key.indexOf(46)),
+                SingletonLanguageController.getLanguage()).getString(key.substring(key.indexOf(46) + 1));
         } catch (Exception e) {
             return defaultString;
         }
     }
+}
+```
+
+**Transformed code with custom method:**
+
+```java
+public class TestClass {
+    
+    @Localizable(value = "scope.key")
+    private static final String KUKU = my.app.MyLocalizationClass.myLocalizationMethod("scope.key", "cucumber");
 }
 ```
 

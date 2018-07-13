@@ -1,0 +1,4 @@
+rootProject.name = 'UILocalizer'
+include ':common'
+include ':processor'
+include ':idea-plugin'

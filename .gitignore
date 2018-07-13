@@ -2,8 +2,10 @@
 *.iws
 *.ipr
 *.iml
+.gradle
+build/
 
-/out/
+out/
 target/
 atlassian-ide-plugin.xml
 
@@ -15,4 +17,5 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
-
+gradlew
+gradlew.bat

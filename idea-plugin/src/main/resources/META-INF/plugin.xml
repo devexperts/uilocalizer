@@ -1,0 +1,18 @@
+<idea-plugin>
+    <name>String Localization plugin</name>
+    <vendor url="http://www.devexperts.com/">Devexperts, LLC</vendor>
+    <depends>com.intellij.properties</depends>
+    <depends>com.intellij.java-i18n</depends>
+    <description>Provides code inspection similar to already existing I18n but with a few additions</description>
+
+    <version>${version}</version>
+
+    <idea-version since-build="141.0"/>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <localInspection groupPath="Java" language="JAVA" shortName="NonLocalizedString"
+                         displayName="Non Localized String literals"
+                         groupName="Internationalization issues" enabledByDefault="false" level="WARNING"
+                         implementationClass="com.devexperts.uilocalizer.StringLocalizationInspection"/>
+    </extensions>
+</idea-plugin>
