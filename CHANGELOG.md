@@ -1,8 +1,11 @@
 
 # CHANGELOG
-## 2.0 - 2018-07-13
+
+## 2.0 - 2018-07-26
+
+- NEW: `uilocalizer-api.jar` published along with `uilocalizer-processor.jar` 
 - NEW: Added new annotation `@LocalizationProperty`
-- NEW: IDEA plugin sources delivered
+- NEW: IDEA plugin delivered
 - NEW: support for custom localization facility (see `com.devexperts.uilocalizer.localizationMethod` option)
 - FIX: removed unnecessary `"new String()"` generation
 

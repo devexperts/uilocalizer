@@ -82,6 +82,7 @@ public class AstNodeFactory {
     /**
      * Call this method before attaching nodes to the class tree.
      * Javac flow analyzer may fail if positions are not synchronized.
+     * @param classDecl a classDecl
      */
     public void setPositionFor(JCTree.JCClassDecl classDecl) {
         maker.pos = classDecl.getStartPosition();

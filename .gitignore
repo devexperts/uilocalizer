@@ -3,7 +3,13 @@
 *.ipr
 *.iml
 .gradle
-build/
+uilocalizer-api/out
+uilocalizer-api/build
+uilocalizer-idea-plugin/out
+uilocalizer-idea-plugin/build
+uilocalizer-processor/out
+uilocalizer-processor/build
+build
 
 out/
 target/
@@ -17,5 +23,3 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
-gradlew
-gradlew.bat

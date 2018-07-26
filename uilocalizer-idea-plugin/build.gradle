@@ -5,9 +5,9 @@ plugins {
 apply plugin: 'org.jetbrains.intellij'
 
 intellij {
-    version '2017.2.2' //IntelliJ IDEA 2017.2.2 dependency; for a full list of IntelliJ IDEA releases please see https://www.jetbrains.com/intellij-repository/releases
-    plugins 'java-i18n', 'properties' //Bundled plugin dependencies
-    pluginName 'String Localization plugin'
+    version '2017.2.2'
+    plugins 'java-i18n', 'properties'
+    // pluginName 'string-localization-plugin'
     updateSinceUntilBuild false
     downloadSources false
 }
@@ -17,12 +17,26 @@ configurations {
     compile.extendsFrom(pluginBuild)
 }
 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifacts = project.configurations.getByName(Dependency.ARCHIVES_CONFIGURATION).getArtifacts().files.filter{it.name.endsWith("zip")}
+        }
+    }
+}
+
 dependencies {
-    pluginBuild project(':common')
+    pluginBuild project(':uilocalizer-api')
 }
 
 jar {
-    from configurations.pluginBuild.asFileTree.files.collect { zipTree(it)} //Required to collect @Localizable interface from the "uilocalizer-common" module
+    //Required to collect annotations from the "uilocalizer-api" module
+    from configurations.pluginBuild.asFileTree.files.collect { zipTree(it) }
+}
+
+javadoc.source += project(':uilocalizer-api').sourceSets.main.java.files
+sourcesJar {
+    from project(':uilocalizer-api').sourceSets.main.java
 }
 
 task licenseCheckIdeaTests(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {

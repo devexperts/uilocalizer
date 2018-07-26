@@ -125,14 +125,14 @@ as a `public` `static` method and tell UI Localizer to use it with `com.devexper
 
 Your localization method shall get a localized property key and a default value as parameters: 
 
-    ```java
-    package my.app;
-    public class MyLocalizationClass {
-        public static String myLocalizationMethod(String key, String defaultStr) {
-             // some code
-        }
+```java
+package my.app;
+public class MyLocalizationClass {
+    public static String myLocalizationMethod(String key, String defaultStr) {
+         // some code
     }
-    ```
+}
+```
     
 Option for localizer to use method above would be 
 

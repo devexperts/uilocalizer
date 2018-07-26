@@ -1,0 +1,23 @@
+dependencies {
+    compile files("${System.getProperty('java.home')}/../lib/tools.jar")
+    testCompile group: 'junit', name: 'junit', version: junitVersion
+}
+
+configurations {
+    pluginBuild
+    compile.extendsFrom(pluginBuild)
+}
+
+dependencies {
+    pluginBuild project(':uilocalizer-api')
+}
+
+jar {
+    //Required to collect annotations from the "uilocalizer-api" module
+    from configurations.pluginBuild.asFileTree.files.collect { zipTree(it) }
+}
+
+javadoc.source += project(':uilocalizer-api').sourceSets.main.java.files
+sourcesJar {
+    from project(':uilocalizer-api').sourceSets.main.java
+}
