@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 2.1 - 2019-05-20
+
+- NEW: support for custom output folder (see `com.devexperts.uilocalizer.outputFolder` option)
+
 ## 2.0 - 2018-07-26
 
 - NEW: `uilocalizer-api.jar` published along with `uilocalizer-processor.jar` 

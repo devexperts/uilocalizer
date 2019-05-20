@@ -70,6 +70,9 @@ UI Localizer tool is fail-safe. That means if anything of mentioned above is mis
 If you use UI Localizer for compilation multiple modules and you use the same property file name you should use the option `com.devexperts.uilocalizer.appendToPropertyFile` set to `true`, properties will be appended to the end of the file, e.g.: `-Acom.devexperts.uilocalizer.appendToPropertyFile=true`. The default value is `false`.
 Use this option with caution, don't forget to clean up all template files before compilation with UI Localizer.
 
+You can define a folder where output files could be found. Use the option `com.devexperts.uilocalizer.outputFolder` set to path to a folder, e.g. `-Acom.devexperts.uilocalizer.outputFolder=C:\project\build`.
+The folder would be created by the UI Localizer if it is absent.
+
 Language consistency
 --------------------
 There is a way to store the language properties in one place. This method will guarantee language consistency of your application.

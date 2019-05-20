@@ -2,7 +2,7 @@
  * #%L
  * UI Localizer
  * %%
- * Copyright (C) 2015 - 2018 Devexperts, LLC
+ * Copyright (C) 2015 - 2019 Devexperts, LLC
  * %%
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -25,21 +26,24 @@ import java.util.Map;
 
 public class OutputUtil {
     public static void printCompilationUnits(Collection<JCTree.JCCompilationUnit> compilationUnits,
-                                             String outputFileName) throws FileNotFoundException {
+            File outputFileName) throws FileNotFoundException
+    {
         PrintWriter writer = new PrintWriter(outputFileName);
         compilationUnits.forEach(writer::println);
         writer.close();
     }
 
-    public static void generatePropertyFiles(List<Map.Entry<String, String>> keysToDefaultValues, boolean append) throws FileNotFoundException {
+    public static void generatePropertyFiles(Path outputFolder, List<Map.Entry<String, String>> keysToDefaultValues,
+        boolean append) throws FileNotFoundException
+    {
         Map<String, PrintWriter> scopesToWriters = new HashMap<>();
         for (Map.Entry<String, String> e : keysToDefaultValues) {
             int dotIndex = e.getKey().indexOf('.');
             String scope = e.getKey().substring(0, dotIndex);
             String key = e.getKey().substring(dotIndex + 1);
             if (!scopesToWriters.containsKey(scope)) {
-                scopesToWriters.put(scope, new PrintWriter(new FileOutputStream(new File(scope + ".properties"),
-                    append)));
+                File file = outputFolder.resolve(scope + ".properties").toFile();
+                scopesToWriters.put(scope, new PrintWriter(new FileOutputStream(file, append)));
             }
             scopesToWriters.get(scope).println(key + "=" + screenSpecialSymbols(e.getValue()));
         }

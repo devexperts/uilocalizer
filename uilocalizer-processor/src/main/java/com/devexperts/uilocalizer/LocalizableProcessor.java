@@ -2,7 +2,7 @@
  * #%L
  * UI Localizer
  * %%
- * Copyright (C) 2015 - 2018 Devexperts, LLC
+ * Copyright (C) 2015 - 2019 Devexperts, LLC
  * %%
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -30,7 +30,11 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,6 +44,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,6 +55,7 @@ public class LocalizableProcessor extends AbstractProcessor {
     private static final String LOCALIZATION_PROPERTY_ANNOTATION = "com.devexperts.uilocalizer.LocalizationProperty";
     public static final String LANGUAGE_CONTROLLER_PATH = "com.devexperts.uilocalizer.languageControllerPath";
     public static final String LOCALIZATION_METHOD_PATH = "com.devexperts.uilocalizer.localizationMethod";
+    public static final String OUTPUT_FOLDER = "com.devexperts.uilocalizer.outputFolder";
     private static final String KEY_REGEX = "[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+";
     private static final String OPTION_APPEND = "com.devexperts.uilocalizer.appendToPropertyFile";
 
@@ -58,6 +64,7 @@ public class LocalizableProcessor extends AbstractProcessor {
     private boolean propertyFileAppend;
     private String languageControllerPath;
     private String localizationMethod;
+    private Path outputFolder;
 
     @Override
     public void init(ProcessingEnvironment procEnv) {
@@ -67,6 +74,8 @@ public class LocalizableProcessor extends AbstractProcessor {
         this.languageControllerPath = procEnv.getOptions().get(LANGUAGE_CONTROLLER_PATH);
         this.localizationMethod = procEnv.getOptions().get(LOCALIZATION_METHOD_PATH);
         this.propertyFileAppend = Boolean.parseBoolean(procEnv.getOptions().get(OPTION_APPEND));
+        this.outputFolder = Paths.get(Optional.ofNullable(procEnv.getOptions().get(OUTPUT_FOLDER)).orElse("."))
+            .toAbsolutePath().normalize();
     }
 
     @Override
@@ -75,6 +84,7 @@ public class LocalizableProcessor extends AbstractProcessor {
         supportedOptions.add(LANGUAGE_CONTROLLER_PATH);
         supportedOptions.add(LOCALIZATION_METHOD_PATH);
         supportedOptions.add(OPTION_APPEND);
+        supportedOptions.add(OUTPUT_FOLDER);
         return Collections.unmodifiableSet(supportedOptions);
     }
 
@@ -92,8 +102,17 @@ public class LocalizableProcessor extends AbstractProcessor {
             return false;
         }
 
+        boolean created = false;
+        if (!Files.exists(outputFolder)) {
+            try {
+                Files.createDirectories(outputFolder);
+                created = true;
+            } catch (IOException e) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "UiLocalizer: " + e.getMessage());
+            }
+        }
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "UiLocalizer annotation processor triggered. " +
-            "Output can be found at " + Paths.get(".").toAbsolutePath().normalize().toString());
+            "Output can be found at " + outputFolder + (created ? " and it was created" : ""));
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "UiLocalizer: Existing property files will be " +
             (propertyFileAppend ? "appended" : "rewritten"));
 
@@ -164,11 +183,15 @@ public class LocalizableProcessor extends AbstractProcessor {
             AddLocalizationNodesVisitor visitor = new AddLocalizationNodesVisitor(
                     nodeFactory, localizableVariableDeclarations, languageControllerPath, localizationMethod);
             compilationUnits.forEach(unit -> unit.accept(visitor));
-            OutputUtil.generatePropertyFiles(keysToDefaultValues.entrySet().stream()
+            java.util.List<Map.Entry<String, String>> sortedKeysToDefaultValues = keysToDefaultValues.entrySet()
+                .stream()
                 .sorted(Comparator.comparing(Map.Entry<String, String>::getKey)
                     .thenComparing(Map.Entry::getValue))
-                .collect(Collectors.toList()), propertyFileAppend);
-            OutputUtil.printCompilationUnits(compilationUnits, "localized_classes.txt");
+                .collect(Collectors.toList());
+
+            OutputUtil.generatePropertyFiles(outputFolder, sortedKeysToDefaultValues, propertyFileAppend);
+            File localizedClassesFile = outputFolder.resolve("localized_classes.txt").toFile();
+            OutputUtil.printCompilationUnits(compilationUnits, localizedClassesFile);
         } catch (InvalidUsageException | FileNotFoundException e) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "UiLocalizer: " + e.getMessage());
         }

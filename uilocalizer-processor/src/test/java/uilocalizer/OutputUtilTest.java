@@ -2,7 +2,7 @@
  * #%L
  * UI Localizer
  * %%
- * Copyright (C) 2015 - 2018 Devexperts, LLC
+ * Copyright (C) 2015 - 2019 Devexperts, LLC
  * %%
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,13 +51,13 @@ public class OutputUtilTest {
     @Test
     public void generatePropertyFilesTest() throws Exception {
         List<Map.Entry<String,String>> testList = createTestList();
-        OutputUtil.generatePropertyFiles(testList, false);
+        OutputUtil.generatePropertyFiles(Paths.get("."), testList, false);
         Properties properties = loadProperties();
         testList.forEach(e -> checkPropertyExistence(properties, e.getKey(), e.getValue()));
 
         List<Map.Entry<String,String>> appendList = new ArrayList<>();
         appendList.add(new AbstractMap.SimpleEntry<>("testcom.appendProperty", "append"));
-        OutputUtil.generatePropertyFiles(appendList, true);
+        OutputUtil.generatePropertyFiles(Paths.get("."), appendList, true);
         Properties appendProperties = loadProperties();
 
         List<Map.Entry<String,String>> resultList = new ArrayList<>();
