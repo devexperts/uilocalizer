@@ -55,7 +55,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.MethodSignature;
 import com.intellij.psi.util.MethodSignatureUtil;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.refactoring.util.RefactoringChangeUtil;
+import com.intellij.util.JavaPsiConstructorUtil;
 import gnu.trove.THashSet;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -101,13 +101,16 @@ class LocalizationUtils {
             PsiElement parent = toplevel.getParent();
             if (parent instanceof PsiVariable && toplevel.equals(((PsiVariable) parent).getInitializer())) {
                 var = (PsiVariable) parent;
-            } else if (parent instanceof PsiSwitchLabelStatement) {
-                final PsiSwitchStatement switchStatement = ((PsiSwitchLabelStatement) parent).getEnclosingSwitchStatement();
-                if (switchStatement != null) {
-                    final PsiExpression switchStatementExpression = switchStatement.getExpression();
-                    if (switchStatementExpression instanceof PsiReferenceExpression) {
-                        final PsiElement resolved = ((PsiReferenceExpression) switchStatementExpression).resolve();
-                        if (resolved instanceof PsiVariable) var = (PsiVariable) resolved;
+            } else if (parent instanceof PsiExpressionList) {
+                parent = parent.getParent();
+                if (parent instanceof PsiSwitchLabelStatement) {
+                    final PsiSwitchStatement switchStatement = ((PsiSwitchLabelStatement) parent).getEnclosingSwitchStatement();
+                    if (switchStatement != null) {
+                        final PsiExpression switchStatementExpression = switchStatement.getExpression();
+                        if (switchStatementExpression instanceof PsiReferenceExpression) {
+                            final PsiElement resolved = ((PsiReferenceExpression) switchStatementExpression).resolve();
+                            if (resolved instanceof PsiVariable) var = (PsiVariable) resolved;
+                        }
                     }
                 }
             }
@@ -382,7 +385,7 @@ class LocalizationUtils {
         }
         final PsiElement grandparent = parent.getParent();
         final PsiClass aClass;
-        if (RefactoringChangeUtil.isSuperOrThisMethodCall(grandparent)) {
+        if (JavaPsiConstructorUtil.isSuperConstructorCall(grandparent)) {
             final PsiMethod method = ((PsiMethodCallExpression) grandparent).resolveMethod();
             if (method != null) {
                 aClass = method.getContainingClass();

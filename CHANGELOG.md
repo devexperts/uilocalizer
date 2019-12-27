@@ -1,6 +1,11 @@
 
 # CHANGELOG
 
+## 2.2 - 2019-12-27
+
+- FIX: Add support of IDEA 2019.1.2 to IDEA plugin
+- NEW: Verify that only a specific bundle is used for localization
+
 ## 2.1 - 2019-05-20
 
 - NEW: support for custom output folder (see `com.devexperts.uilocalizer.outputFolder` option)

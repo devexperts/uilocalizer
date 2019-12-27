@@ -7,7 +7,7 @@
 
     <version>${version}</version>
 
-    <idea-version since-build="141.0"/>
+    <idea-version since-build="182"/>
 
     <extensions defaultExtensionNs="com.intellij">
         <localInspection groupPath="Java" language="JAVA" shortName="NonLocalizedString"

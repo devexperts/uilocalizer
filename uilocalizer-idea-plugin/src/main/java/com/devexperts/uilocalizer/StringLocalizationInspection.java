@@ -372,7 +372,7 @@ public class StringLocalizationInspection extends I18nInspection {
     final PsiClassInitializer[] initializers = aClass.getInitializers();
     final ArrayList<ProblemDescriptor> problems = new ArrayList<>();
     Arrays.stream(initializers)
-        .map(psiClassInitializer -> checkElement(psiClassInitializer, manager, isOnTheFly))
+        .map(psiClassInitializer -> checkElement(psiClassInitializer.getBody(), manager, isOnTheFly))
         .filter(problemDescriptors -> problemDescriptors != null)
         .forEach(problem -> ContainerUtil.addAll(problems, problem));
     return problems.isEmpty() ? ProblemDescriptor.EMPTY_ARRAY : problems.toArray(new ProblemDescriptor[problems.size()]);
@@ -621,6 +621,10 @@ public class StringLocalizationInspection extends I18nInspection {
 
     @Override
     public void visitMethod(PsiMethod method) {
+    }
+
+    @Override
+    public void visitClassInitializer(PsiClassInitializer initializer) {
     }
 
     @Override

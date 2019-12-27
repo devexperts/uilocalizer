@@ -17,6 +17,7 @@ import com.intellij.openapi.roots.LanguageLevelProjectExtension;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.testFramework.InspectionTestCase;
+import com.intellij.testFramework.LightCodeInsightTestCase;
 
 /**
  * Created by sugakandrey.
@@ -44,7 +45,7 @@ public class StringLocalizationInspectionTest extends InspectionTestCase {
     public void testNonNlsClassWithLambda() throws Exception { doTest(); }
     public void testNonNlsPackage() throws Exception { doTest(); }
     public void testEnum() throws Exception {
-        final JavaPsiFacade facade = getJavaFacade();
+        final JavaPsiFacade facade = LightCodeInsightTestCase.getJavaFacade();
         final LanguageLevel effectiveLanguageLevel = LanguageLevelProjectExtension.getInstance(facade.getProject()).getLanguageLevel();
         LanguageLevelProjectExtension.getInstance(facade.getProject()).setLanguageLevel(LanguageLevel.JDK_1_5);
         try {

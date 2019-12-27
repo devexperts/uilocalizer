@@ -4,7 +4,7 @@ buildscript {
         mavenLocal()
     }
     dependencies {
-        classpath 'org.hibernate.build.gradle:gradle-maven-publish-auth:2.0.1'
+        classpath 'net.linguica.gradle:maven-settings-plugin:0.5'
     }
 }
 
@@ -22,7 +22,7 @@ allprojects {
     apply plugin: 'java'
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
-    apply plugin: 'maven-publish-auth'
+    apply plugin: 'net.linguica.maven-settings'
     group = 'com.devexperts.uilocalizer'
 
     release {

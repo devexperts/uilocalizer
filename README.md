@@ -73,6 +73,9 @@ Use this option with caution, don't forget to clean up all template files before
 You can define a folder where output files could be found. Use the option `com.devexperts.uilocalizer.outputFolder` set to path to a folder, e.g. `-Acom.devexperts.uilocalizer.outputFolder=C:\project\build`.
 The folder would be created by the UI Localizer if it is absent.
 
+You can check that only a specific bundle is used for localization in processed files. Use the option `com.devexperts.uilocalizer.requireBundleName`, e.g., `-Acom.devexperts.uilocalizer.requireBundleName=user`,
+and a compilation will fail with an exception if `@Localizable("com.devexperts.user.Panel.Label")` is used instead of `@Localizable("user.Panel.Label")`.
+
 Language consistency
 --------------------
 There is a way to store the language properties in one place. This method will guarantee language consistency of your application.

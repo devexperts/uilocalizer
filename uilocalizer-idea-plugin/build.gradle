@@ -5,7 +5,7 @@ plugins {
 apply plugin: 'org.jetbrains.intellij'
 
 intellij {
-    version '2017.2.2'
+    version '2019.1.2'
     plugins 'java-i18n', 'properties'
     // pluginName 'string-localization-plugin'
     updateSinceUntilBuild false
