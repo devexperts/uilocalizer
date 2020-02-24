@@ -9,7 +9,8 @@ configurations {
 }
 
 dependencies {
-    pluginBuild project(':uilocalizer-api')
+    implementation "com.devexperts.uilocalizer:uilocalizer-api:2.2"
+    //todo: replace line above with: pluginBuild project(":uilocalizer-api")
 }
 
 jar {
