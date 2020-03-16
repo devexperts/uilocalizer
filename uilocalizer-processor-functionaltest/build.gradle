@@ -1,0 +1,47 @@
+apply plugin: 'java'
+
+dependencies {
+    annotationProcessor project(":uilocalizer-processor")
+    implementation "com.devexperts.uilocalizer:uilocalizer-api:2.2"
+    //todo: replace line above with: implementation project(":uilocalizer-api")
+    testImplementation 'junit:junit:4.12'
+    compileOnly project(":uilocalizer-processor")
+}
+
+
+ext.localizationMethod = 'Lang.getString_u'
+ext.localizationAppend = false
+compileJava {
+    options.compilerArgs += ["-Acom.devexperts.uilocalizer.localizationMethod=${localizationMethod}",
+                             "-Acom.devexperts.uilocalizer.outputFolder=${project.buildDir}/localizationTool",
+                             "-Acom.devexperts.uilocalizer.requireBundleName=test"]
+}
+
+test {
+    useJUnit()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': projectName + ': ' + project.name,
+                'Implementation-Version': version,
+                'Copyright': copyright,
+                'Built-by': System.getProperty('user.name'),
+                'Build-JDK': System.getProperty('java.version'),
+                'Source-Compatibity': sourceCompatibility,
+                'Target-Compatibity': targetCompatibility
+    }
+}
+
+
+
+repositories {
+    maven { url "https://dl.bintray.com/devexperts/Maven" }
+    maven { url "https://repo.maven.apache.org/maven2" }
+}

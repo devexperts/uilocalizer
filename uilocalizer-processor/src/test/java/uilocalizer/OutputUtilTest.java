@@ -51,19 +51,30 @@ public class OutputUtilTest {
     @Test
     public void generatePropertyFilesTest() throws Exception {
         List<Map.Entry<String,String>> testList = createTestList();
-        OutputUtil.generatePropertyFiles(Paths.get("."), testList, false);
+        OutputUtil.generatePropertyFiles(Paths.get("."), testList);
         Properties properties = loadProperties();
         testList.forEach(e -> checkPropertyExistence(properties, e.getKey(), e.getValue()));
 
-        List<Map.Entry<String,String>> appendList = new ArrayList<>();
-        appendList.add(new AbstractMap.SimpleEntry<>("testcom.appendProperty", "append"));
-        OutputUtil.generatePropertyFiles(Paths.get("."), appendList, true);
-        Properties appendProperties = loadProperties();
+        /*test property addition*/
+        List<Map.Entry<String,String>> addList = new ArrayList<>();
+        addList.add(new AbstractMap.SimpleEntry<>("testcom.addProperty", "added"));
+        OutputUtil.generatePropertyFiles(Paths.get("."), addList);
+        Properties addedProperties = loadProperties();
+        assertEquals("added", addedProperties.getProperty("addProperty"));
+        testList.forEach(e -> checkPropertyExistence(addedProperties, e.getKey(), e.getValue()));
 
+        /*test property update*/
+        List<Map.Entry<String,String>> updateList = new ArrayList<>();
+        updateList.add(new AbstractMap.SimpleEntry<>("testcom.addProperty", "updated"));
+        OutputUtil.generatePropertyFiles(Paths.get("."), updateList);
+        Properties updatedProperties = loadProperties();
+        assertEquals("updated", updatedProperties.getProperty("addProperty"));
+
+        /*test original properties exist after update*/
         List<Map.Entry<String,String>> resultList = new ArrayList<>();
         resultList.addAll(testList);
-        resultList.addAll(appendList);
-        resultList.forEach(e -> checkPropertyExistence(appendProperties, e.getKey(), e.getValue()));
+        resultList.addAll(updateList);
+        resultList.forEach(e -> checkPropertyExistence(updatedProperties, e.getKey(), e.getValue()));
     }
 
     private Properties loadProperties() throws IOException {
