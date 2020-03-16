@@ -9,7 +9,7 @@ configurations {
 }
 
 dependencies {
-    pluginBuild project(':uilocalizer-api')
+    pluginBuild project(":uilocalizer-api")
 }
 
 jar {

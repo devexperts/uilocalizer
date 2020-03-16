@@ -67,8 +67,7 @@ You can choose the current language in your application using java property `ui.
 
 UI Localizer tool is fail-safe. That means if anything of mentioned above is missing (java property, key in a file for concrete language or a file for the language itself), default string value from initial source code will be used.
 
-If you use UI Localizer for compilation multiple modules and you use the same property file name you should use the option `com.devexperts.uilocalizer.appendToPropertyFile` set to `true`, properties will be appended to the end of the file, e.g.: `-Acom.devexperts.uilocalizer.appendToPropertyFile=true`. The default value is `false`.
-Use this option with caution, don't forget to clean up all template files before compilation with UI Localizer.
+If you use UI Localizer with Gradle incremental compilation (or using the same property file for multiple modules), properties from each processing phase will be merged with previously existed in the file; new properties will replace old ones. Old properties that do not have a corresponding mention in the code will remain in place, so clean up all template files before compilation with UI Localizer to avoid stale options.
 
 You can define a folder where output files could be found. Use the option `com.devexperts.uilocalizer.outputFolder` set to path to a folder, e.g. `-Acom.devexperts.uilocalizer.outputFolder=C:\project\build`.
 The folder would be created by the UI Localizer if it is absent.

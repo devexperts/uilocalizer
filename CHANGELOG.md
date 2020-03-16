@@ -1,6 +1,11 @@
 
 # CHANGELOG
 
+## 3.0 - 2020-03-16
+
+- NEW: Gradle incremental processing support
+- NEW: Append mode removed in favor of merging properties. 
+
 ## 2.2 - 2019-12-27
 
 - FIX: Add support of IDEA 2019.1.2 to IDEA plugin

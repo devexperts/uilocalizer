@@ -2,7 +2,7 @@
  * #%L
  * UI Localizer
  * %%
- * Copyright (C) 2015 - 2019 Devexperts, LLC
+ * Copyright (C) 2015 - 2020 Devexperts, LLC
  * %%
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -20,19 +20,9 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Pair;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,6 +37,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 
 @SupportedAnnotationTypes({"com.devexperts.uilocalizer.Localizable"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -58,11 +58,9 @@ public class LocalizableProcessor extends AbstractProcessor {
     public static final String OUTPUT_FOLDER = "com.devexperts.uilocalizer.outputFolder";
     public static final String REQUIRE_BUNDLE_NAME = "com.devexperts.uilocalizer.requireBundleName";
     private static final String KEY_REGEX = "[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+";
-    private static final String OPTION_APPEND = "com.devexperts.uilocalizer.appendToPropertyFile";
 
     private JavacProcessingEnvironment javacProcessingEnv;
     private TreeMaker maker;
-    private boolean propertyFileAppend;
     private String languageControllerPath;
     private String localizationMethod;
     private Path outputFolder;
@@ -71,11 +69,15 @@ public class LocalizableProcessor extends AbstractProcessor {
     @Override
     public void init(ProcessingEnvironment procEnv) {
         super.init(procEnv);
-        this.javacProcessingEnv = (JavacProcessingEnvironment) procEnv;
+        // in incremental mode gradle would pass us a wrapped instance
+        boolean isIncrementalCompilation = !(procEnv instanceof JavacProcessingEnvironment);
+        processingEnv.getMessager()
+            .printMessage(Diagnostic.Kind.NOTE, "UiLocalizer: isIncrementalCompilation=" + isIncrementalCompilation);
+
+        this.javacProcessingEnv = getJavacProcessingEnvironment(procEnv);
         this.maker = TreeMaker.instance(javacProcessingEnv.getContext());
         this.languageControllerPath = procEnv.getOptions().get(LANGUAGE_CONTROLLER_PATH);
         this.localizationMethod = procEnv.getOptions().get(LOCALIZATION_METHOD_PATH);
-        this.propertyFileAppend = Boolean.parseBoolean(procEnv.getOptions().get(OPTION_APPEND));
         this.outputFolder = Paths.get(Optional.ofNullable(procEnv.getOptions().get(OUTPUT_FOLDER)).orElse("."))
             .toAbsolutePath().normalize();
         this.requireBundleName = procEnv.getOptions().get(REQUIRE_BUNDLE_NAME);
@@ -86,7 +88,6 @@ public class LocalizableProcessor extends AbstractProcessor {
         Set<String> supportedOptions = new HashSet<>();
         supportedOptions.add(LANGUAGE_CONTROLLER_PATH);
         supportedOptions.add(LOCALIZATION_METHOD_PATH);
-        supportedOptions.add(OPTION_APPEND);
         supportedOptions.add(OUTPUT_FOLDER);
         supportedOptions.add(REQUIRE_BUNDLE_NAME);
         return Collections.unmodifiableSet(supportedOptions);
@@ -115,10 +116,9 @@ public class LocalizableProcessor extends AbstractProcessor {
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "UiLocalizer: " + e.getMessage());
             }
         }
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "UiLocalizer annotation processor triggered. " +
-            "Output can be found at " + outputFolder + (created ? " and it was created" : ""));
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "UiLocalizer: Existing property files will be " +
-            (propertyFileAppend ? "appended" : "rewritten"));
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
+            "UiLocalizer annotation processor triggered. Output folder: " + outputFolder +
+                (created ? " (created)" : ""));
 
         if (this.localizationMethod != null) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
@@ -200,10 +200,10 @@ public class LocalizableProcessor extends AbstractProcessor {
                     .thenComparing(Map.Entry::getValue))
                 .collect(Collectors.toList());
 
-            OutputUtil.generatePropertyFiles(outputFolder, sortedKeysToDefaultValues, propertyFileAppend);
+            OutputUtil.generatePropertyFiles(outputFolder, sortedKeysToDefaultValues);
             File localizedClassesFile = outputFolder.resolve("localized_classes.txt").toFile();
             OutputUtil.printCompilationUnits(compilationUnits, localizedClassesFile);
-        } catch (InvalidUsageException | FileNotFoundException e) {
+        } catch (Throwable e) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "UiLocalizer: " + e.getMessage());
         }
         return true;
@@ -268,14 +268,14 @@ public class LocalizableProcessor extends AbstractProcessor {
             throw new InvalidUsageException(decl, "Field must be initialized");
         }
         if (decl.getInitializer() instanceof JCTree.JCMethodInvocation) {
-            JCTree.JCMethodInvocation initializer = ((JCTree.JCMethodInvocation)decl.getInitializer());
-            if (initializer.getArguments().size() != 2){
+            JCTree.JCMethodInvocation initializer = ((JCTree.JCMethodInvocation) decl.getInitializer());
+            if (initializer.getArguments().size() != 2) {
                 throw new InvalidUsageException(decl, "Only supported: 2 arguments");
             }
             return;
         }
 
-        if (decl.getInitializer() instanceof JCTree.JCNewClass){
+        if (decl.getInitializer() instanceof JCTree.JCNewClass) {
             return;
         }
         throw new InvalidUsageException(decl, "Only method and constructor initializers are supported");
@@ -323,8 +323,33 @@ public class LocalizableProcessor extends AbstractProcessor {
 
         String bundleName = key.split("\\.")[0];
         if (!requireBundleName.equals(bundleName)) {
-            throw new InvalidUsageException(String.format("The first part of the %1$s key '%2$s' should be '%3$s', " +
-                "not '%4$s'", annotation, key, requireBundleName, bundleName));
+            throw new InvalidUsageException(
+                String.format("The first part of the %1$s key '%2$s' should be '%3$s', not '%4$s'",
+                    annotation, key, requireBundleName, bundleName));
         }
+    }
+
+    /**
+     * This class casts the given processing environment to a JavacProcessingEnvironment. In case of
+     * gradle incremental compilation, the delegate ProcessingEnvironment of the gradle wrapper is returned.
+     */
+    private static JavacProcessingEnvironment getJavacProcessingEnvironment(ProcessingEnvironment procEnv) {
+        final Class<?> procEnvClass = procEnv.getClass();
+        if (procEnv.getClass().getName()
+            .equals("org.gradle.api.internal.tasks.compile.processing.IncrementalProcessingEnvironment"))
+        {
+            try {
+                Field field = procEnvClass.getDeclaredField("delegate");
+                field.setAccessible(true);
+                Object delegate = field.get(procEnv);
+                return getJavacProcessingEnvironment((ProcessingEnvironment) delegate);
+            } catch (Exception e) {
+                e.printStackTrace();
+                procEnv.getMessager().printMessage(
+                    Diagnostic.Kind.ERROR, "Can't get the delegate of the gradle IncrementalProcessingEnvironment.");
+                throw new IllegalStateException(e);
+            }
+        }
+        return (JavacProcessingEnvironment) procEnv;
     }
 }

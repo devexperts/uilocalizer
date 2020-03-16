@@ -1,0 +1,20 @@
+
+dependencies {
+    annotationProcessor project(":uilocalizer-processor")
+    implementation project(":uilocalizer-api")
+    testImplementation 'junit:junit:4.12'
+    compileOnly project(":uilocalizer-processor")
+}
+
+ext.localizationMethod = 'Lang.getString_u'
+compileJava {
+    options.compilerArgs += [
+        "-Acom.devexperts.uilocalizer.localizationMethod=${localizationMethod}",
+        "-Acom.devexperts.uilocalizer.outputFolder=${project.buildDir}/localizationTool",
+        "-Acom.devexperts.uilocalizer.requireBundleName=test"
+    ]
+}
+
+test {
+    useJUnit()
+}
