@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 3.1 - 2021-06-01
+
+- FIX: UI Localizer annotation processor doesn't trigger if a compilation module contains `@LocalizationProperty` only
+
 ## 3.0 - 2020-03-16
 
 - NEW: Gradle incremental processing support

@@ -2,7 +2,7 @@
  * #%L
  * UI Localizer
  * %%
- * Copyright (C) 2015 - 2020 Devexperts, LLC
+ * Copyright (C) 2015 - 2021 Devexperts, LLC
  * %%
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -48,11 +48,13 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
-@SupportedAnnotationTypes({"com.devexperts.uilocalizer.Localizable"})
+@SupportedAnnotationTypes({LocalizableProcessor.LOCALIZABLE_ANNOTATION, LocalizableProcessor.LOCALIZATION_PROPERTY_ANNOTATION})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class LocalizableProcessor extends AbstractProcessor {
-    private static final String LOCALIZABLE_ANNOTATION = "com.devexperts.uilocalizer.Localizable";
-    private static final String LOCALIZATION_PROPERTY_ANNOTATION = "com.devexperts.uilocalizer.LocalizationProperty";
+
+    public static final String LOCALIZABLE_ANNOTATION = "com.devexperts.uilocalizer.Localizable";
+    public static final String LOCALIZATION_PROPERTY_ANNOTATION = "com.devexperts.uilocalizer.LocalizationProperty";
+
     public static final String LANGUAGE_CONTROLLER_PATH = "com.devexperts.uilocalizer.languageControllerPath";
     public static final String LOCALIZATION_METHOD_PATH = "com.devexperts.uilocalizer.localizationMethod";
     public static final String OUTPUT_FOLDER = "com.devexperts.uilocalizer.outputFolder";
